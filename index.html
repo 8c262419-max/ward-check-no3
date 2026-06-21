@@ -114,7 +114,6 @@ for (let r = 1; r <= 22; r++) {
 const ALL_BEDS = [];
 ROOM_CONFIG.forEach(({ room, subs }) => subs.forEach(s => ALL_BEDS.push(s ? `${room}-${s}` : `${room}`)));
 
-// 更新後的 8C神經外科病房-3號車 設備項目設定 (不含獨立麻醉管，由表單獨立管理狀態)
 const ITEMS_CONFIG = [
   { id: "bladder_sono",  label: "Bladder sono",       icon: "📟", type: "count_only", expected: 1, max: 1 },
   { id: "omron_bp",      label: "Omron血壓計",        icon: "🩸", type: "split",      poolMax: 8 },
@@ -136,4 +135,4 @@ function itemsFromRecord(rec) {
 }
 
 function effExpected(cfg, v) {
-  if (cfg.type === "count_only" && cfg.expected != null) return Math
+  if (cfg.type === "count_only" && cfg.expected != null) return Math.max(0, cfg.expected
