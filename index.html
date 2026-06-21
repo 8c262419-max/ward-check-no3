@@ -311,7 +311,7 @@ const inp = { width:"100%",padding:"10px 14px",borderRadius:12,marginTop:4,borde
 function CheckForm({ records, onSave, onDone, onCancel, editRecord }) {
   const today = new Date().toISOString().split("T")[0];
   const [nurse,    setNurse]    = useState(editRecord?.nurse||"");
-  const [date,     setDate]     = useState(editRecord?.date||today);
+  const [date,      setDate]     = useState(editRecord?.date||today);
   const [shift,    setShift]    = useState(editRecord?.shift||null);
   const [items,    setItems]    = useState(editRecord?itemsFromRecord(editRecord):defaultItems());
   
@@ -365,6 +365,7 @@ function CheckForm({ records, onSave, onDone, onCancel, editRecord }) {
     SFX.success(); setSaving(false); setSyncing(true);
     try {
       const payload = {
+        targetSheet: "3號車",  // 🌟 核心分流機制：指定寫入試算表的「3號車」分頁
         nurse: record.nurse, date: record.date, shift: record.shift, submittedAt: record.updatedAt, isEdit,
         anesTube: record.anesTubeChecked ? "已完成" : "未完成", 
         items: record.items.map(it => {
@@ -390,131 +391,3 @@ function CheckForm({ records, onSave, onDone, onCancel, editRecord }) {
     e("div", { style: { background:`linear-gradient(135deg,${P.pri} 0%,${P.teal} 100%)`,borderRadius:20,padding:"18px 20px",marginBottom:14,color:"#fff",boxShadow:`0 6px 20px ${P.pri}44` } },
       e("div", { style: { fontSize:28,marginBottom:4 } }, isEdit?"✏️":"🧠"),
       e("div", { style: { fontWeight:900,fontSize:20 } }, isEdit?"修改點班紀錄":"開始點班囉！"),
-      e("div", { style: { fontSize:12,opacity:0.85,marginTop:2 } }, `8C神經外科病房-3號車 · 共 ${ALL_BEDS.length} 床`)
-    ),
-    e("div", { style: { background:P.card,borderRadius:18,padding:16,marginBottom:12,boxShadow:"0 2px 12px #7C5CBF18",border:`1px solid ${P.border}` } },
-      e("label", { style: lbl }, "👩‍⚕️ 護理師姓名 ", e("span", { style: { color: P.coral } }, "*")),
-      e("input", { value: nurse, onChange: e=>setNurse(e.target.value), onClick: ()=>SFX.tap(), placeholder: "請輸入姓名", style: inp }),
-      e("label", { style: { ...lbl, marginTop:12 } }, "📅 日期"),
-      e("input", { type: "date", value: date, onChange: e=>setDate(e.target.value), style: inp }),
-      e("label", { style: { ...lbl, marginTop:12 } }, "⏰ 班別 ", e("span", { style: { color: P.coral } }, "*")),
-      e("div", { style: { display:"flex",gap:8,marginTop:6 } },
-        SHIFTS.map((s,i)=>
-          e("button", { key: s, onClick: ()=>pickShift(s), style: { flex:1,padding:"14px 0",borderRadius:14,fontWeight:700,fontSize:15,cursor:"pointer",border:`2.5px solid ${shift===s?SBDS[i]:P.border}`,background:shift===s?SBGS[i]:P.card, color:shift===s?SBDS[i]:P.muted,transition:"all .15s",boxShadow:shift===s?`0 4px 12px ${SBDS[i]}44`:"none" } }, `${SHIFT_EMOJI[i]} ${s}`)
-        )
-      ),
-      carried && e("div", { style: { marginTop:10,padding:"9px 14px",background:"#E3FAFC",borderRadius:12,fontSize:13,color:"#0C8599",fontWeight:600,border:"1.5px solid #0C859944" } }, "✨ 已帶入上一班紀錄，請確認後修改")
-    ),
-    
-    e("div", { style: { background:P.card,borderRadius:18,padding:"14px 14px 4px",boxShadow:"0 2px 12px #7C5CBF18",marginBottom:14,border:`1px solid ${P.border}` } },
-      e("div", { style: { fontWeight:800,fontSize:16,color:P.pri,marginBottom:12,display:"flex",alignItems:"center",gap:8 } },
-        e("span", { style: { background:P.priL,borderRadius:10,padding:"4px 10px" } }, "📋 點班項目")
-      ),
-      
-      e("button", { 
-        onClick: () => { SFX.toggle(); setAnesTubeChecked(!anesTubeChecked); },
-        style: { width: "100%", display: "flex", alignItems: "center", background: "#FFFFFF", border: `2px solid ${anesTubeChecked ? P.mint : '#E4DEFF'}`, borderRadius: "16px", padding: "16px", marginBottom: "12px", cursor: "pointer", transition: "all 0.15s ease", outline: "none", textAlign: "left" }
-      },
-        e("div", { style: { width: "24px", height: "24px", border: `2px solid ${anesTubeChecked ? P.mint : '#7C5CBF'}`, borderRadius: "6px", marginRight: "12px", display: "flex", alignItems: "center", justifyContent: "center", background: anesTubeChecked ? P.mint : "#fff", color: "#fff", fontWeight: "bold", fontSize: "16px", flexShrink: 0 } }, anesTubeChecked ? "✓" : ""),
-        e("span", { style: { fontSize: "16px", fontWeight: "700", color: "#2D2A4A", flex: 1 } }, "🧪 點麻醉管治療"),
-        e("span", { style: { fontSize: "12px", fontWeight: "700", padding: "4px 10px", borderRadius: "20px", background: anesTubeChecked ? P.mintL : P.coralL, color: anesTubeChecked ? P.mint : P.coral } }, anesTubeChecked ? "✓ 已完成" : "未完成")
-      ),
-
-      ITEMS_CONFIG.map(cfg=>
-        cfg.type==="split"
-          ? e(SplitItemRow, { key: cfg.id, cfg: cfg, value: items[cfg.id], onChange: v=>handleChange(cfg.id,v), hasError: errIds.has(cfg.id) })
-          : e(CountOnlyRow, { key: cfg.id, cfg: cfg, value: items[cfg.id], onChange: v=>handleChange(cfg.id,v), hasError: errIds.has(cfg.id) })
-      )
-    ),
-    e("div", { style: { position:"fixed",bottom:0,left:0,right:0,padding:"12px 16px",background:P.card,borderTop:`1px solid ${P.border}`,display:"flex",gap:10,zIndex:50 } },
-      e("button", { onClick: ()=>{ SFX.tap(); onCancel(); }, style: { flex:1,padding:14,borderRadius:14,border:`2px solid ${P.border}`,background:P.card,color:P.muted,fontWeight:700,fontSize:15,cursor:"pointer" } }, "取消"),
-      e("button", { onClick: submit, disabled: saving||syncing, style: { flex:2.5,padding:14,borderRadius:14,border:"none",background:shift?`linear-gradient(135deg,${P.pri},${P.teal})`:P.muted,color:"#fff",fontWeight:800,fontSize:16,cursor:(saving||syncing)?"not-allowed":"pointer",opacity:(saving||syncing)?0.7:1,boxShadow:shift?`0 4px 14px ${P.pri}55`:"none" } }, 
-        saving?"儲存中…":syncing?"同步中…":isEdit?"✅ 儲存修改":"✅ 完成點班"
-      )
-    )
-  );
-}
-
-function RecordCard({ record, onDelete, onEdit }) {
-  const [open,    setOpen]    = useState(false);
-  const [confirm, setConfirm] = useState(false);
-
-  return e("div", { style: { background:P.card,borderRadius:18,marginBottom:12,boxShadow:"0 2px 10px #7C5CBF15",overflow:"hidden",border:`1px solid ${P.border}` } },
-    confirm && e(ConfirmModal, { title: "確定要刪除嗎？", body: "刪除後無法復原，請確認。", onConfirm: ()=>{ setConfirm(false); onDelete(record.id); }, onCancel: ()=>setConfirm(false) }),
-    e("div", { onClick: ()=>{ SFX.tap(); setOpen(o=>!o); }, style: { padding:"13px 16px",display:"flex",alignItems:"center",gap:10,cursor:"pointer" } },
-      e("div", { style: { flex:1 } },
-        e("div", { style: { fontWeight:700,fontSize:15,display:"flex",gap:8,alignItems:"center",flexWrap:"wrap" } }, 
-          record.nurse, " ", e(ShiftTag, { shift: record.shift }),
-          record.updatedAt && record.updatedAt!==record.createdAt && e("span", { style: { fontSize:10,color:P.muted,background:P.bg,borderRadius:10,padding:"1px 6px" } }, "已修改")
-        ),
-        e("div", { style: { fontSize:12,color:P.muted,marginTop:2,display:"flex",gap:8,alignItems:"center",flexWrap:"wrap" } }, 
-          `📅 ${record.date}`,
-          record.anesTubeChecked && e("span", { style: { background:P.mintL,color:P.mint,border:`1px solid ${P.mint}55`,borderRadius:12,padding:"1px 7px",fontSize:11,fontWeight:700 } }, "🧪 麻醉管已點"),
-          (record.items||[]).filter(it=>(it.value?.loanCount||0)>0).length>0 && e("span", { style: { background:P.orangeL,color:P.orange,border:`1px solid ${P.orange}55`,borderRadius:12,padding:"1px 7px",fontSize:11,fontWeight:700 } }, `🔄 外借/維修 ${(record.items||[]).filter(it=>(it.value?.loanCount||0)>0).length} 項`)
-        )
-      ),
-      e("span", { style: { color:P.muted,fontSize:18 } }, open?"▲":"▼")
-    ),
-    open && e("div", { style: { borderTop:`1px solid ${P.border}`,padding:"12px 16px" } },
-      e("div", { style: { display:"flex",alignItems:"center",gap:6,padding:"7px 0",borderBottom:`1px solid ${P.border}` } },
-        e("span", { style: { fontSize:15 } }, "🧪"),
-        e("span", { style: { fontWeight:700,fontSize:13,minWidth:90 } }, "點麻醉管治療"),
-        e("span", { style: { color: record.anesTubeChecked?P.mint:P.coral,fontWeight:700,background:record.anesTubeChecked?P.mintL:P.coralL,borderRadius:10,padding:"2px 9px",fontSize:12 } }, record.anesTubeChecked?"✓ 已完成打勾":"未勾選")
-      ),
-      record.items.map(it=>{
-        const v=it.value, lc=v.loanCount||0;
-        if (!((v.count||0)>0||(v.beds?.length||0)>0||lc>0||v.note)) return null;
-        const cfg=ITEMS_CONFIG.find(c=>c.id===it.id);
-        return e("div", { key: it.id, style: { display:"flex",alignItems:"center",gap:6,padding:"7px 0",borderBottom:`1px solid ${P.border}`,flexWrap:"wrap" } },
-          e("span", { style: { fontSize:15 } }, cfg?.icon),
-          e("span", { style: { fontWeight:700,fontSize:13,minWidth:90 } }, it.label),
-          cfg?.type==="count_only" && e("span", { style: { color:P.pri,fontWeight:700,background:P.priL,borderRadius:10,padding:"2px 9px",fontSize:12 } }, `在場 ${v.count||0} 台`),
-          cfg?.type==="split" && (v.count||0)>0 && e("span", { style: { color:P.pri,fontWeight:700,background:P.priL,borderRadius:10,padding:"2px 9px",fontSize:12 } }, `站內 ${v.count||0} 台`),
-          v.beds && v.beds.length > 0 && e("span", { style: { color:P.teal,fontWeight:700,background:P.tealL,borderRadius:10,padding:"2px 9px",fontSize:12 } }, `使用中: ${v.beds.join(', ')}`),
-          lc > 0 && e("span", { style: { color:P.orange,fontWeight:700,background:P.orangeL,borderRadius:10,padding:"2px 9px",fontSize:12 } }, `外借/維修 ${lc} 台 (${v.loanNote || '無說明'})`),
-          v.note && e("span", { style: { color:P.muted,fontSize:12,width:'100%',display:'block',marginTop:2 } }, `💬 備註: ${v.note}`)
-        );
-      }),
-      e("div", { style: { display:'flex',gap:8,marginTop:12,justifyContent:'flex-end' } },
-        e("button", { onClick: ()=>{ SFX.tap(); onEdit(record); }, style: { padding:"6px 12px",borderRadius:8,border:`1px solid ${P.pri}`,background:'#fff',color:P.pri,fontSize:13,fontWeight:700,cursor:'pointer' } }, "編輯"),
-        e("button", { onClick: ()=>{ SFX.tap(); setConfirm(true); }, style: { padding:"6px 12px",borderRadius:8,border:'none',background:P.coral,color:'#fff',fontSize:13,fontWeight:700,cursor:'pointer' } }, "刪除")
-      )
-    )
-  );
-}
-
-function App() {
-  const [records, setRecords] = useState([]);
-  const [view, setView] = useState("list");
-  const [editRecord, setEditRecord] = useState(null);
-
-  useEffect(() => { setRecords(loadRecords()); }, []);
-
-  function handleSave(record, isEdit) {
-    const next = isEdit ? records.map(r => r.id === record.id ? record : r) : [record, ...records];
-    setRecords(next); saveRecords(next);
-  }
-  function handleDelete(id) { const next = records.filter(r => r.id !== id); setRecords(next); saveRecords(next); }
-
-  return e("div", { style: { maxWidth: 600, margin: "0 auto", paddingBottom: 40 } },
-    view === "list" 
-      ? e("div", null,
-          e("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, flexWrap: 'wrap', gap: 10 } },
-            e("h2", { style: { color: P.priD, fontWeight: 900 } }, "📋 點班歷史紀錄"),
-            e("button", { onClick: () => { SFX.nav(); setEditRecord(null); setView("form"); }, style: { padding: "10px 18px", borderRadius: 14, border: "none", background: `linear-gradient(135deg, ${P.pri}, ${P.teal})`, color: "#fff", fontWeight: 800, fontSize: 15, cursor: "pointer", boxShadow: "0 4px 12px rgba(124,92,191,0.3)" } }, "➕ 開始點班")
-          ),
-          records.length === 0 
-            ? e("div", { style: { textAlign: "center", padding: "40px 20px", background: P.card, borderRadius: 18, color: P.muted, border: `1px solid ${P.border}` } },
-                e("p", { style: { fontSize: 48, marginBottom: 8 } }, "📭"), e("p", { style: { fontWeight: 700 } }, "目前沒有點班紀錄"), e("p", { style: { fontSize: 13, marginTop: 4 } }, "點擊右上角「開始點班」建立一筆吧！")
-              )
-            : records.map(r => e(RecordCard, { key: r.id, record: r, onDelete: handleDelete, onEdit: (rec) => { SFX.nav(); setEditRecord(rec); setView("form"); } }))
-        )
-      : e(CheckForm, { records: records, onSave: handleSave, onDone: () => setView("list"), onCancel: () => { SFX.nav(); setView("list"); }, editRecord: editRecord })
-  );
-}
-
-const root = ReactDOM.createRoot(document.getElementById('root'));
-root.render(e(App));
-</script>
-</body>
-</html>
