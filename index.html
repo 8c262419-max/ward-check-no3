@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
-  <title>8C神經外科病房-3號車點班</title>
+  <title>8C神外病房－4號車點班</title>
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <style>
@@ -24,7 +24,7 @@ const { useState, useEffect } = React;
 const e = React.createElement;
 
 const GAS_URL = "https://script.google.com/macros/s/AKfycbxE6bj8H3B_iHLqIrHAKVyd3Cnr4141kLy9BX-qmPxARs7lyucKbSSXvhh8xv9FOqLD/exec";
-const STORAGE_KEY = "ward_check_records_8c_v3";
+const STORAGE_KEY = "ward_check_records_v4";
 
 function loadRecords() {
   try { const r = localStorage.getItem(STORAGE_KEY); return r ? JSON.parse(r) : []; }
@@ -47,10 +47,14 @@ const ALL_BEDS = [];
 ROOM_CONFIG.forEach(({ room, subs }) => subs.forEach(s => ALL_BEDS.push(s ? `${room}-${s}` : `${room}`)));
 
 const ITEMS_CONFIG = [
-  { id: "bladder_sono",  label: "Bladder sono",       icon: "📟", type: "count_only", expected: 1, max: 1 },
-  { id: "omron_bp",      label: "Omron血壓計",        icon: "🩸", type: "split",      poolMax: 8 },
-  { id: "two_in_one",    label: "二合一無線生理監測器",icon: "🖥️", type: "split",      poolMax: 6 },
-  { id: "o2_flowmeter",  label: "O2雙頭流量表",       icon: "💨", type: "split",      poolMax: 8 }
+  { id: "blood_glucose", label: "血糖機",     icon: "🩸", type: "count_only", expected: 3, max: 3 },
+  { id: "urine_sg",      label: "尿比重計",    icon: "🧪", type: "count_only", expected: 1, max: 1 },
+  { id: "imec",          label: "I-MEC",       icon: "🖥️",  type: "split",     poolMax: 6  },
+  { id: "ekg12",         label: "12導程 EKG",  icon: "❤️",  type: "count_only", expected: 1, max: 1 },
+  { id: "ultrasound",    label: "100萬超音波",  icon: "🔊", type: "count_only", expected: 1, max: 1 },
+  { id: "oximeter_pink", label: "Oximeter 粉", icon: "💗", type: "split",     poolMax: 3  },
+  { id: "oximeter_blue", label: "Oximeter 藍", icon: "💙", type: "split",     poolMax: 2  },
+  { id: "syringe_pump",  label: "空針幫浦",    icon: "💉", type: "split",     poolMax: 1  },
 ];
 
 function defaultItems() {
@@ -61,7 +65,7 @@ function defaultItems() {
 function itemsFromRecord(rec) {
   const o = defaultItems();
   (rec.items || []).forEach(it => {
-    if (it.id && o[it.id]) o[it.id] = { loanCount:0, loanNote:"", beds:[], note:"", ...it.value };
+    if (it.id) o[it.id] = { loanCount:0, loanNote:"", beds:[], note:"", ...it.value };
   });
   return o;
 }
@@ -271,13 +275,14 @@ function SplitItemRow({ cfg, value, onChange, hasError }) {
 function CountOnlyRow({ cfg, value, onChange, hasError }) {
   const v   = value || { count:0, loanCount:0, loanNote:"", note:"" };
   const eff = effExpected(cfg, v);
+  const lc  = v.loanCount||0;
   const mismatch = eff!=null && (v.count||0)!==eff;
 
   return e("div", { style: { background:hasError?P.coralL:P.card,borderRadius:16,padding:"14px 14px 10px",marginBottom:10,border:`2px solid ${hasError?P.coral:P.border}`,boxShadow:"0 2px 8px #7C5CBF11" } },
     e("div", { style: { display:"flex",alignItems:"center",gap:8,marginBottom:10 } },
       e("span", { style: { fontSize:22 } }, cfg.icon),
       e("span", { style: { flex:1,fontWeight:700,fontSize:15,color:"#2D2A4A" } }, cfg.label),
-      eff!=null && e("span", { style: { fontSize:12,fontWeight:700,padding:"3px 10px",borderRadius:20,background:mismatch?P.coralL:P.mintL,color:mismatch?P.coral,border:`1px solid ${mismatch?P.coral:P.mint}55` } }, `應有 ${eff} 台`)
+      eff!=null && e("span", { style: { fontSize:12,fontWeight:700,padding:"3px 10px",borderRadius:20,background:mismatch?P.coralL:P.mintL,color:mismatch?P.coral:P.mint,border:`1px solid ${mismatch?P.coral:P.mint}55` } }, `應有 ${eff} 台${lc>0?`（外借 ${lc}）`:""}`)
     ),
     e("div", { style: { display:"flex",alignItems:"center",justifyContent:"center",gap:16,padding:"10px 0",marginBottom:8 } },
       e("button", { onClick:()=>{ SFX.minus(); onChange({ ...v,count:Math.max(0,(v.count||0)-1) }); }, style: cBtn(P.card,P.pri,(v.count||0)===0) }, "−"),
@@ -389,7 +394,7 @@ function CheckForm({ records, onSave, onDone, onCancel, editRecord }) {
     e("div", { style: { background:`linear-gradient(135deg,${P.pri} 0%,${P.teal} 100%)`,borderRadius:20,padding:"18px 20px",marginBottom:14,color:"#fff",boxShadow:`0 6px 20px ${P.pri}44` } },
       e("div", { style: { fontSize:28,marginBottom:4 } }, isEdit?"✏️":"🧠"),
       e("div", { style: { fontWeight:900,fontSize:20 } }, isEdit?"修改點班紀錄":"開始點班囉！"),
-      e("div", { style: { fontSize:12,opacity:0.85,marginTop:2 } }, `8C神經外科病房-3號車 · 共 ${ALL_BEDS.length} 床`)
+      e("div", { style: { fontSize:12,opacity:0.85,marginTop:2 } }, `8C神外病房－4號車 · 共 ${ALL_BEDS.length} 床`)
     ),
     e("div", { style: { background:P.card,borderRadius:18,padding:16,marginBottom:12,boxShadow:"0 2px 12px #7C5CBF18",border:`1px solid ${P.border}` } },
       e("label", { style: lbl }, "👩‍⚕️ 護理師姓名 ", e("span", { style: { color: P.coral } }, "*")),
