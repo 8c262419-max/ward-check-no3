@@ -60,8 +60,9 @@ function defaultItems() {
 }
 function itemsFromRecord(rec) {
   const o = defaultItems();
+  if (!rec || !rec.items) return o;
   (rec.items || []).forEach(it => {
-    if (it.id && o[it.id]) o[it.id] = { loanCount:0, loanNote:"", beds:[], note:"", ...it.value };
+    if (it && it.id && o[it.id]) o[it.id] = { loanCount:0, loanNote:"", beds:[], note:"", ...it.value };
   });
   return o;
 }
@@ -137,7 +138,7 @@ function validate(items) {
 
 function ShiftTag({ shift }) {
   const i = SHIFTS.indexOf(shift);
-  return e("span", { style: { background:SBGS[i], color:SBDS[i], border:`1.5px solid ${SBDS[i]}`, borderRadius:20, padding:"2px 10px", fontSize:12, fontWeight:700 } }, `${SHIFT_EMOJI[i]} ${shift}`);
+  return e("span", { style: { background:SBGS[i]||'#fff', color:SBDS[i]||'#333', border:`1.5px solid ${SBDS[i]||'#ccc'}`, borderRadius:20, padding:"2px 10px", fontSize:12, fontWeight:700 } }, `${SHIFT_EMOJI[i]||''} ${shift}`);
 }
 
 function Modal({ title, body, onClose, type="error" }) {
@@ -173,6 +174,7 @@ function ConfirmModal({ title, body, onConfirm, onCancel }) {
 }
 
 function BedPicker({ selected, onChange, remaining }) {
+  const currentSelected = selected || [];
   return e("div", null,
     e("div", { style: { fontSize:12,color:P.muted,marginBottom:6,display:"flex",alignItems:"center",gap:6 } }, 
       "🛏 選擇使用床號",
@@ -184,8 +186,8 @@ function BedPicker({ selected, onChange, remaining }) {
           e("span", { style: { fontSize:11,color:P.muted,width:30,textAlign:"right",flexShrink:0 } }, `${room}室`),
           subs.map(s=>{
             const label=s?`${room}-${s}`:`${room}`;
-            const on=selected.includes(label), dis=!on&&remaining<=0;
-            return e("button", { key: label, onClick:()=>{ if(dis)return; SFX.bed(); onChange(on?selected.filter(x=>x!==label):[...selected,label]); },
+            const on=currentSelected.includes(label), dis=!on&&remaining<=0;
+            return e("button", { key: label, onClick:()=>{ if(dis)return; SFX.bed(); onChange(on?currentSelected.filter(x=>x!==label):[...currentSelected,label]); },
               style: { minWidth:46,height:34,borderRadius:10,fontSize:12,cursor:dis?"not-allowed":"pointer",
                 border:`2px solid ${on?P.pri:P.border}`,background:on?P.pri:dis?"#F1EFF8":P.card,
                 color:on?"#fff":dis?P.muted:"#333",fontWeight:on?700:400,opacity:dis?0.4:1,transition:"all .12s" } }, label);
@@ -202,7 +204,7 @@ function cBtn(bg, color, disabled=false) {
 }
 
 function LoanRow({ v, onChange, maxLoan }) {
-  const lc = v.loanCount || 0;
+  const lc = v?.loanCount || 0;
   const showNote = lc > 0;
   return e("div", { style: { background:P.orangeL, borderRadius:12, padding:"10px 12px", marginBottom:10, border:`1.5px solid ${P.orange}44` } },
     e("div", { style: { display:"flex", alignItems:"center", gap:8, marginBottom: showNote ? 8 : 0 } },
@@ -212,7 +214,7 @@ function LoanRow({ v, onChange, maxLoan }) {
       e("span", { style: { fontWeight:900,fontSize:20,minWidth:26,textAlign:"center",color:lc>0?P.orange:P.muted } }, lc),
       e("button", { onClick:()=>{ SFX.loan(); onChange({ ...v, loanCount:Math.min(lc+1, maxLoan) }); }, style: cBtn(P.orange, "#fff", lc>=maxLoan) }, "+")
     ),
-    showNote && e("input", { value: v.loanNote||"", onChange: e=>onChange({ ...v, loanNote:e.target.value }), placeholder: "📋 說明（如：外借加護病房 / 維修中）",
+    showNote && e("input", { value: v?.loanNote||"", onChange: e=>onChange({ ...v, loanNote:e.target.value }), placeholder: "📋 說明（如：外借加護病房 / 維修中）",
       style: { width:"100%",padding:"7px 10px",borderRadius:9,border:`1.5px solid ${P.orange}88`,fontSize:12,boxSizing:"border-box",outline:"none",background:"#fff",color:"#5a3000" } })
   );
 }
@@ -278,7 +280,7 @@ function CountOnlyRow({ cfg, value, onChange, hasError }) {
     e("div", { style: { display:"flex",alignItems:"center",gap:8,marginBottom:10 } },
       e("span", { style: { fontSize:22 } }, cfg.icon),
       e("span", { style: { flex:1,fontWeight:700,fontSize:15,color:"#2D2A4A" } }, cfg.label),
-      eff!=null && e("span", { style: { fontSize:12,fontWeight:700,padding:"3px 10px",borderRadius:20,background:mismatch?P.coralL:P.mintL,color:mismatch?P.coral,border:`1px solid ${mismatch?P.coral:P.mint}55` } }, `應有 ${eff} 台${lc>0?`（外借 ${lc}）`:""}`)
+      eff!=null && e("span", { style: { fontSize:12,fontWeight:700,padding:"3px 10px",borderRadius:20,background:mismatch?P.coralL:P.mintL,color:mismatch?P.coral:P.mint,border:`1px solid ${mismatch?P.coral:P.mint}55` } }, `應有 ${eff} 台${lc>0?`（外借 ${lc}）`:""}`)
     ),
     e("div", { style: { display:"flex",alignItems:"center",justifyContent:"center",gap:16,padding:"10px 0",marginBottom:8 } },
       e("button", { onClick:()=>{ SFX.minus(); onChange({ ...v,count:Math.max(0,(v.count||0)-1) }); }, style: cBtn(P.card,P.pri,(v.count||0)===0) }, "−"),
@@ -330,7 +332,7 @@ function CheckForm({ records, onSave, onDone, onCancel, editRecord }) {
     SFX.toggle(); setShift(s);
     if (!isEdit) {
       const prev = SHIFT_PREV[s];
-      const prevRec = [...(records || [])].filter(r=>r.shift===prev).sort((a,b)=>b.createdAt?.localeCompare(a.createdAt))[0];
+      const prevRec = [...(records || [])].filter(r=>r&&r.shift===prev).sort((a,b)=>b.createdAt?.localeCompare(a.createdAt))[0];
       if (prevRec) { 
         setItems(itemsFromRecord(prevRec)); 
         setAnesTubeChecked(prevRec.anesTubeChecked || false);
@@ -368,7 +370,7 @@ function CheckForm({ records, onSave, onDone, onCancel, editRecord }) {
         targetSheet: "3號車",
         nurse: record.nurse, date: record.date, shift: record.shift, submittedAt: record.updatedAt, isEdit,
         anesTube: record.anesTubeChecked ? "已完成" : "未完成", 
-        items: record.items.map(it => {
+        items: (record.items || []).map(it => {
           const v = it.value, cfg = ITEMS_CONFIG.find(c=>c.id===it.id);
           const expected = cfg?.type==="split" ? effPoolMax(cfg, v) : effExpected(cfg, v);
           return { id:it.id, label:it.label, count:v.count || 0, beds:v.beds ? v.beds.join("、") : "", loanCount:v.loanCount || 0, loanNote:v.loanNote || "", note:v.note || "", expected:expected };
@@ -445,13 +447,13 @@ function RecordCard({ record, onDelete, onEdit }) {
     e("div", { onClick: ()=>{ SFX.tap(); setOpen(o=>!o); }, style: { padding:"13px 16px",display:"flex",alignItems:"center",gap:10,cursor:"pointer" } },
       e("div", { style: { flex:1 } },
         e("div", { style: { fontWeight:700,fontSize:15,display:"flex",gap:8,alignItems:"center",flexWrap:"wrap" } }, 
-          record.nurse, " ", e(ShiftTag, { shift: record.shift }),
-          record.updatedAt && record.updatedAt!==record.createdAt && e("span", { style: { fontSize:10,color:P.muted,background:P.bg,borderRadius:10,padding:"1px 6px" } }, "已修改")
+          record?.nurse || "未命名", " ", e(ShiftTag, { shift: record?.shift }),
+          record?.updatedAt && record?.updatedAt!==record?.createdAt && e("span", { style: { fontSize:10,color:P.muted,background:P.bg,borderRadius:10,padding:"1px 6px" } }, "已修改")
         ),
         e("div", { style: { fontSize:12,color:P.muted,marginTop:2,display:"flex",gap:8,alignItems:"center",flexWrap:"wrap" } }, 
-          `📅 ${record.date}`,
-          record.anesTubeChecked && e("span", { style: { background:P.mintL,color:P.mint,border:`1px solid ${P.mint}55`,borderRadius:12,padding:"1px 7px",fontSize:11,fontWeight:700 } }, "🧪 麻醉管已點"),
-          (record.items||[]).filter(it=>(it.value?.loanCount||0)>0).length>0 && e("span", { style: { background:P.orangeL,color:P.orange,border:`1px solid ${P.orange}55`,borderRadius:12,padding:"1px 7px",fontSize:11,fontWeight:700 } }, `🔄 外借/維修 ${(record.items||[]).filter(it=>(it.value?.loanCount||0)>0).length} 項`)
+          `📅 ${record?.date || ""}`,
+          record?.anesTubeChecked && e("span", { style: { background:P.mintL,color:P.mint,border:`1px solid ${P.mint}55`,borderRadius:12,padding:"1px 7px",fontSize:11,fontWeight:700 } }, "🧪 麻醉管已點"),
+          (record?.items||[]).filter(it=>it && (it.value?.loanCount||0)>0).length>0 && e("span", { style: { background:P.orangeL,color:P.orange,border:`1px solid ${P.orange}55`,borderRadius:12,padding:"1px 7px",fontSize:11,fontWeight:700 } }, `🔄 外借/維修 ${(record?.items||[]).filter(it=>it && (it.value?.loanCount||0)>0).length} 項`)
         )
       ),
       e("span", { style: { color:P.muted,fontSize:18 } }, open?"▲":"▼")
@@ -460,11 +462,12 @@ function RecordCard({ record, onDelete, onEdit }) {
       e("div", { style: { display:"flex",alignItems:"center",gap:6,padding:"7px 0",borderBottom:`1px solid ${P.border}` } },
         e("span", { style: { fontSize:15 } }, "🧪"),
         e("span", { style: { fontWeight:700,fontSize:13,minWidth:90 } }, "點麻醉管治療"),
-        e("span", { style: { color: record.anesTubeChecked?P.mint:P.coral,fontWeight:700,background:record.anesTubeChecked?P.mintL:P.coralL,borderRadius:10,padding:"2px 9px",fontSize:12 } }, record.anesTubeChecked?"✓ 已完成打勾":"未勾選")
+        e("span", { style: { color: record?.anesTubeChecked?P.mint:P.coral,fontWeight:700,background:record?.anesTubeChecked?P.mintL:P.coralL,borderRadius:10,padding:"2px 9px",fontSize:12 } }, record?.anesTubeChecked?"✓ 已完成打勾":"未勾選")
       ),
-      (record.items || []).map(it=>{
-        const v=it.value, lc=v.loanCount||0;
-        if (!((v.count||0)>0||(v.beds?.length||0)>0||lc>0||v.note)) return null;
+      (record?.items || []).map(it=>{
+        if (!it) return null;
+        const v=it.value, lc=v?.loanCount||0;
+        if (!v || !((v.count||0)>0||(v.beds?.length||0)>0||lc>0||v.note)) return null;
         const cfg=ITEMS_CONFIG.find(c=>c.id===it.id);
         return e("div", { key: it.id, style: { display:"flex",alignItems:"center",gap:6,padding:"7px 0",borderBottom:`1px solid ${P.border}`,flexWrap:"wrap" } },
           e("span", { style: { fontSize:15 } }, cfg?.icon),
@@ -492,11 +495,16 @@ function App() {
   useEffect(() => { setRecords(loadRecords()); }, []);
 
   function handleSave(record, isEdit) {
-    const next = isEdit ? records.map(r => r.id === record.id ? record : r) : [record, ...records];
+    const currentRecords = records || [];
+    const next = isEdit ? currentRecords.map(r => r && r.id === record.id ? record : r) : [record, ...currentRecords];
     setRecords(next); saveRecords(next);
     setView("list"); setEditRecord(null);
   }
-  function handleDelete(id) { const next = records.filter(r => r.id !== id); setRecords(next); saveRecords(next); }
+  function handleDelete(id) { 
+    const currentRecords = records || [];
+    const next = currentRecords.filter(r => r && r.id !== id); 
+    setRecords(next); saveRecords(next); 
+  }
 
   return e("div", { style: { maxWidth: 600, margin: "0 auto", paddingBottom: 40 } },
     view === "list" 
@@ -505,11 +513,11 @@ function App() {
             e("h2", { style: { color: P.priD, fontWeight: 900 } }, "📋 點班歷史紀錄"),
             e("button", { onClick: () => { SFX.nav(); setEditRecord(null); setView("form"); }, style: { padding: "10px 18px", borderRadius: 14, border: "none", background: `linear-gradient(135deg, ${P.pri}, ${P.teal})`, color: "#fff", fontWeight: 800, fontSize: 15, cursor: "pointer", boxShadow: "0 4px 12px rgba(124,92,191,0.3)" } }, "➕ 開始點班")
           ),
-          records.length === 0 
+          (!records || records.length === 0)
             ? e("div", { style: { textAlign: "center", padding: "40px 20px", background: P.card, borderRadius: 18, color: P.muted, border: `1px solid ${P.border}` } },
                 e("p", { style: { fontSize: 48, marginBottom: 8 } }, "📭"), e("p", { style: { fontWeight: 700 } }, "目前沒有點班紀錄"), e("p", { style: { fontSize: 13, marginTop: 4 } }, "點擊右上角「開始點班」建立一筆吧！")
               )
-            : records.map(r => e(RecordCard, { key: r.id, record: r, onDelete: handleDelete, onEdit: (rec) => { SFX.nav(); setEditRecord(rec); setView("form"); } }))
+            : records.map(r => r && r.id ? e(RecordCard, { key: r.id, record: r, onDelete: handleDelete, onEdit: (rec) => { SFX.nav(); setEditRecord(rec); setView("form"); } }) : null)
         )
       : e(CheckForm, { records: records, onSave: handleSave, onDone: () => { setView("list"); setEditRecord(null); }, onCancel: () => { SFX.nav(); setView("list"); setEditRecord(null); }, editRecord: editRecord })
   );
