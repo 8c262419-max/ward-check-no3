@@ -6,8 +6,8 @@
   <meta name="apple-mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
   <title>8C神經外科病房-3號車</title>
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
   <style>
     *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
     body{background:#F5F0FF;font-family:'Noto Sans TC','PingFang TC',system-ui,sans-serif;padding:16px;color:#2D2A4A;}
@@ -17,7 +17,7 @@
   </style>
 </head>
 <body>
-<div id="root"></div>
+<div id="root" style="padding:30px; text-align:center; color:#9E9AB5; font-size:15px; font-weight:bold;">網頁載入中，若長時間維持此畫面請重新整理...</div>
 
 <script>
 const { useState, useEffect } = React;
@@ -316,7 +316,6 @@ function CheckForm({ records, onSave, onDone, onCancel, editRecord }) {
   const [date,     setDate]     = useState(editRecord?.date||today);
   const [shift,    setShift]    = useState(editRecord?.shift||null);
   const [items,    setItems]    = useState(editRecord?itemsFromRecord(editRecord):defaultItems());
-  
   const [anesTubeChecked, setAnesTubeChecked] = useState(editRecord?.anesTubeChecked || false);
 
   const [modal,   setModal]   = useState(null);
@@ -523,8 +522,18 @@ function App() {
   );
 }
 
-const root = ReactDOM.createRoot(document.getElementById('root'));
-root.render(e(App));
+// 嚴格監聽 DOM 確保完全加載後才渲染，解決高頻率白屏問題
+document.addEventListener("DOMContentLoaded", function() {
+  try {
+    const container = document.getElementById('root');
+    if (container) {
+      const root = ReactDOM.createRoot(container);
+      root.render(e(App));
+    }
+  } catch (err) {
+    console.error(err);
+  }
+});
 </script>
 </body>
 </html>
