@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
-  <title>8C神外病房－4號車點班</title>
+  <title>8C神經外科病房-3號車</title>
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <style>
@@ -24,7 +24,7 @@ const { useState, useEffect } = React;
 const e = React.createElement;
 
 const GAS_URL = "https://script.google.com/macros/s/AKfycbxE6bj8H3B_iHLqIrHAKVyd3Cnr4141kLy9BX-qmPxARs7lyucKbSSXvhh8xv9FOqLD/exec";
-const STORAGE_KEY = "ward_check_records_v4";
+const STORAGE_KEY = "ward_check_records_8c_v3";
 
 function loadRecords() {
   try { const r = localStorage.getItem(STORAGE_KEY); return r ? JSON.parse(r) : []; }
@@ -47,14 +47,10 @@ const ALL_BEDS = [];
 ROOM_CONFIG.forEach(({ room, subs }) => subs.forEach(s => ALL_BEDS.push(s ? `${room}-${s}` : `${room}`)));
 
 const ITEMS_CONFIG = [
-  { id: "blood_glucose", label: "血糖機",     icon: "🩸", type: "count_only", expected: 3, max: 3 },
-  { id: "urine_sg",      label: "尿比重計",    icon: "🧪", type: "count_only", expected: 1, max: 1 },
-  { id: "imec",          label: "I-MEC",       icon: "🖥️",  type: "split",     poolMax: 6  },
-  { id: "ekg12",         label: "12導程 EKG",  icon: "❤️",  type: "count_only", expected: 1, max: 1 },
-  { id: "ultrasound",    label: "100萬超音波",  icon: "🔊", type: "count_only", expected: 1, max: 1 },
-  { id: "oximeter_pink", label: "Oximeter 粉", icon: "💗", type: "split",     poolMax: 3  },
-  { id: "oximeter_blue", label: "Oximeter 藍", icon: "💙", type: "split",     poolMax: 2  },
-  { id: "syringe_pump",  label: "空針幫浦",    icon: "💉", type: "split",     poolMax: 1  },
+  { id: "bladder_sono",  label: "Bladder sono",       icon: "📟", type: "count_only", expected: 1, max: 1 },
+  { id: "omron_bp",      label: "Omron血壓計",        icon: "🩸", type: "split",      poolMax: 8 },
+  { id: "two_in_one",    label: "二合一無線生理監測器",icon: "🖥️", type: "split",      poolMax: 6 },
+  { id: "o2_flowmeter",  label: "O2雙頭流量表",       icon: "💨", type: "split",      poolMax: 8 }
 ];
 
 function defaultItems() {
@@ -65,7 +61,7 @@ function defaultItems() {
 function itemsFromRecord(rec) {
   const o = defaultItems();
   (rec.items || []).forEach(it => {
-    if (it.id) o[it.id] = { loanCount:0, loanNote:"", beds:[], note:"", ...it.value };
+    if (it.id && o[it.id]) o[it.id] = { loanCount:0, loanNote:"", beds:[], note:"", ...it.value };
   });
   return o;
 }
@@ -394,7 +390,7 @@ function CheckForm({ records, onSave, onDone, onCancel, editRecord }) {
     e("div", { style: { background:`linear-gradient(135deg,${P.pri} 0%,${P.teal} 100%)`,borderRadius:20,padding:"18px 20px",marginBottom:14,color:"#fff",boxShadow:`0 6px 20px ${P.pri}44` } },
       e("div", { style: { fontSize:28,marginBottom:4 } }, isEdit?"✏️":"🧠"),
       e("div", { style: { fontWeight:900,fontSize:20 } }, isEdit?"修改點班紀錄":"開始點班囉！"),
-      e("div", { style: { fontSize:12,opacity:0.85,marginTop:2 } }, `8C神外病房－4號車 · 共 ${ALL_BEDS.length} 床`)
+      e("div", { style: { fontSize:12,opacity:0.85,marginTop:2 } }, `8C神經外科病房-3號車 · 共 ${ALL_BEDS.length} 床`)
     ),
     e("div", { style: { background:P.card,borderRadius:18,padding:16,marginBottom:12,boxShadow:"0 2px 12px #7C5CBF18",border:`1px solid ${P.border}` } },
       e("label", { style: lbl }, "👩‍⚕️ 護理師姓名 ", e("span", { style: { color: P.coral } }, "*")),
@@ -421,7 +417,7 @@ function CheckForm({ records, onSave, onDone, onCancel, editRecord }) {
       },
         e("div", { style: { width: "24px", height: "24px", border: `2px solid ${anesTubeChecked ? P.mint : '#7C5CBF'}`, borderRadius: "6px", marginRight: "12px", display: "flex", alignItems: "center", justifyContent: "center", background: anesTubeChecked ? P.mint : "#fff", color: "#fff", fontWeight: "bold", fontSize: "16px", flexShrink: 0 } }, anesTubeChecked ? "✓" : ""),
         e("span", { style: { fontSize: "16px", fontWeight: "700", color: "#2D2A4A", flex: 1 } }, "🧪 點麻醉管治療"),
-        e("span", { style: { fontSize: "12px", fontWeight: "700", padding: "4px 10px", borderRadius: "20px", background: anesTubeChecked ? P.mintL : P.coralL, color: anesTubeChecked ? P.mint : P.coral } }, anesTubeChecked ? "✓ 已完成" : "未勾選")
+        e("span", { style: { fontSize: "12px", fontWeight: "700", padding: "4px 10px", borderRadius: "20px", background: anesTubeChecked ? P.mintL : P.coralL, color: anesTubeChecked ? P.mint : P.coral } }, anesTubeChecked ? "✓ 已完成" : "未完成")
       ),
 
       ITEMS_CONFIG.map(cfg=>
