@@ -278,7 +278,7 @@ function CountOnlyRow({ cfg, value, onChange, hasError }) {
     e("div", { style: { display:"flex",alignItems:"center",gap:8,marginBottom:10 } },
       e("span", { style: { fontSize:22 } }, cfg.icon),
       e("span", { style: { flex:1,fontWeight:700,fontSize:15,color:"#2D2A4A" } }, cfg.label),
-      eff!=null && e("span", { style: { fontSize:12,fontWeight:700,padding:"3px 10px",borderRadius:20,background:mismatch?P.coralL:P.mintL,color:mismatch?P.coral:P.mint,border:`1px solid ${mismatch?P.coral:P.mint}55` } }, `應有 ${eff} 台${lc>0?`（外借 ${lc}）`:""}`)
+      eff!=null && e("span", { style: { fontSize:12,fontWeight:700,padding:"3px 10px",borderRadius:20,background:mismatch?P.coralL:P.mintL,color:mismatch?P.coral,border:`1px solid ${mismatch?P.coral:P.mint}55` } }, `應有 ${eff} 台${lc>0?`（外借 ${lc}）`:""}`)
     ),
     e("div", { style: { display:"flex",alignItems:"center",justifyContent:"center",gap:16,padding:"10px 0",marginBottom:8 } },
       e("button", { onClick:()=>{ SFX.minus(); onChange({ ...v,count:Math.max(0,(v.count||0)-1) }); }, style: cBtn(P.card,P.pri,(v.count||0)===0) }, "−"),
@@ -330,7 +330,7 @@ function CheckForm({ records, onSave, onDone, onCancel, editRecord }) {
     SFX.toggle(); setShift(s);
     if (!isEdit) {
       const prev = SHIFT_PREV[s];
-      const prevRec = [...records].filter(r=>r.shift===prev).sort((a,b)=>b.createdAt?.localeCompare(a.createdAt))[0];
+      const prevRec = [...(records || [])].filter(r=>r.shift===prev).sort((a,b)=>b.createdAt?.localeCompare(a.createdAt))[0];
       if (prevRec) { 
         setItems(itemsFromRecord(prevRec)); 
         setAnesTubeChecked(prevRec.anesTubeChecked || false);
@@ -379,7 +379,7 @@ function CheckForm({ records, onSave, onDone, onCancel, editRecord }) {
       setModal({ type:"success", title:"雲端同步成功 ☁️✅", body:"點班資料已成功同步至雲端試算表！按確認返回紀錄頁面。" });
     } catch (err) {
       setSyncing(false); SFX.error();
-      setModal({ type:"warn", title:"雲端同步失敗 ⚠️", body: `資料已儲存於本機，但同步試算表時發生錯誤。\n（${err.message}）\n\n可稍後再試。` });
+      setModal({ type:"warn", title:"雲端同步失敗 ⚠️", body:`資料已儲存於本機，但同步試算表時發生錯誤。\n（${err.message}）\n\n可稍後再試。` });
     }
   }
 
@@ -462,7 +462,7 @@ function RecordCard({ record, onDelete, onEdit }) {
         e("span", { style: { fontWeight:700,fontSize:13,minWidth:90 } }, "點麻醉管治療"),
         e("span", { style: { color: record.anesTubeChecked?P.mint:P.coral,fontWeight:700,background:record.anesTubeChecked?P.mintL:P.coralL,borderRadius:10,padding:"2px 9px",fontSize:12 } }, record.anesTubeChecked?"✓ 已完成打勾":"未勾選")
       ),
-      (record.items||[]).map(it=>{
+      (record.items || []).map(it=>{
         const v=it.value, lc=v.loanCount||0;
         if (!((v.count||0)>0||(v.beds?.length||0)>0||lc>0||v.note)) return null;
         const cfg=ITEMS_CONFIG.find(c=>c.id===it.id);
@@ -494,6 +494,7 @@ function App() {
   function handleSave(record, isEdit) {
     const next = isEdit ? records.map(r => r.id === record.id ? record : r) : [record, ...records];
     setRecords(next); saveRecords(next);
+    setView("list"); setEditRecord(null);
   }
   function handleDelete(id) { const next = records.filter(r => r.id !== id); setRecords(next); saveRecords(next); }
 
