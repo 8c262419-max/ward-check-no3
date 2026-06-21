@@ -14,74 +14,6 @@
     input,button{font-family:inherit;}
     @keyframes spin{to{transform:rotate(360deg)}}
     @keyframes pulse2{0%,100%{opacity:1}50%{opacity:0.4}}
-    
-    /* 自訂美化 Checkbox 樣式 */
-    .checkbox-container {
-      display: flex;
-      align-items: center;
-      background: #FFFFFF;
-      border: 2px solid #E4DEFF;
-      border-radius: 16px;
-      padding: 16px;
-      margin-bottom: 12px;
-      cursor: pointer;
-      user-select: none;
-      box-shadow: 0 2px 8px rgba(124,92,191,0.06);
-      transition: all 0.15s ease;
-    }
-    .checkbox-container:active {
-      transform: scale(0.99);
-    }
-    .checkbox-input {
-      display: none;
-    }
-    .checkbox-custom {
-      width: 26px;
-      height: 26px;
-      border: 2px solid #7C5CBF;
-      border-radius: 6px;
-      margin-right: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: all 0.15s ease;
-      background: #fff;
-      flex-shrink: 0;
-    }
-    .checkbox-input:checked + .checkbox-custom {
-      background: #51CF66;
-      border-color: #51CF66;
-    }
-    .checkbox-custom::after {
-      content: "✓";
-      color: white;
-      font-size: 18px;
-      font-weight: bold;
-      display: none;
-    }
-    .checkbox-input:checked + .checkbox-custom::after {
-      display: block;
-    }
-    .checkbox-label {
-      font-size: 16px;
-      font-weight: 700;
-      color: #2D2A4A;
-      flex: 1;
-    }
-    .checkbox-status {
-      font-size: 12px;
-      font-weight: 700;
-      padding: 4px 10px;
-      border-radius: 20px;
-      background: #FFF0F0;
-      color: #FF6B6B;
-      border: 1px solid rgba(255,107,107,0.3);
-    }
-    .checkbox-input:checked ~ .checkbox-status {
-      background: #EBFBEE;
-      color: #51CF66;
-      border-color: rgba(81,207,102,0.3);
-    }
   </style>
 </head>
 <body>
@@ -382,7 +314,6 @@ function CheckForm({ records, onSave, onDone, onCancel, editRecord }) {
   const [shift,    setShift]    = useState(editRecord?.shift||null);
   const [items,    setItems]    = useState(editRecord?itemsFromRecord(editRecord):defaultItems());
   
-  // 獨立管理的麻醉管完成狀態
   const [anesTubeChecked, setAnesTubeChecked] = useState(editRecord?.anesTubeChecked || false);
 
   const [modal,   setModal]   = useState(null);
@@ -479,11 +410,13 @@ function CheckForm({ records, onSave, onDone, onCancel, editRecord }) {
         e("span", { style: { background:P.priL,borderRadius:10,padding:"4px 10px" } }, "📋 點班項目")
       ),
       
-      e("label", { className: "checkbox-container", onClick: () => { SFX.toggle(); } },
-        e("input", { type: "checkbox", className: "checkbox-input", checked: anesTubeChecked, onChange: (evt) => setAnesTubeChecked(evt.target.checked) }),
-        e("div", { className: "checkbox-custom" }),
-        e("span", { className: "checkbox-label" }, "🧪 點麻醉管治療"),
-        e("span", { className: "checkbox-status" }, anesTubeChecked ? "✓ 已完成" : "未勾選")
+      e("button", { 
+        onClick: () => { SFX.toggle(); setAnesTubeChecked(!anesTubeChecked); },
+        style: { width: "100%", display: "flex", alignItems: "center", background: "#FFFFFF", border: `2px solid ${anesTubeChecked ? P.mint : '#E4DEFF'}`, borderRadius: "16px", padding: "16px", marginBottom: "12px", cursor: "pointer", transition: "all 0.15s ease", outline: "none", textAlign: "left" }
+      },
+        e("div", { style: { width: "24px", height: "24px", border: `2px solid ${anesTubeChecked ? P.mint : '#7C5CBF'}`, borderRadius: "6px", marginRight: "12px", display: "flex", alignItems: "center", justifyContent: "center", background: anesTubeChecked ? P.mint : "#fff", color: "#fff", fontWeight: "bold", fontSize: "16px", flexShrink: 0 } }, anesTubeChecked ? "✓" : ""),
+        e("span", { style: { fontSize: "16px", fontWeight: "700", color: "#2D2A4A", flex: 1 } }, "🧪 點麻醉管治療"),
+        e("span", { style: { fontSize: "12px", fontWeight: "700", padding: "4px 10px", borderRadius: "20px", background: anesTubeChecked ? P.mintL : P.coralL, color: anesTubeChecked ? P.mint : P.coral } }, anesTubeChecked ? "✓ 已完成" : "未勾選")
       ),
 
       ITEMS_CONFIG.map(cfg=>
