@@ -311,7 +311,15 @@ const lbl = { fontSize:13,fontWeight:700,color:P.muted,display:"block" };
 const inp = { width:"100%",padding:"10px 14px",borderRadius:12,marginTop:4,border:`1.5px solid ${P.border}`,fontSize:15,boxSizing:"border-box",outline:"none",background:P.bg };
 
 function CheckForm({ records, onSave, onDone, onCancel, editRecord }) {
-  const today = new Date().toISOString().split("T")[0];
+  // 自動取得台灣本地當天日期 (YYYY-MM-DD)
+  const getLocalDateString = () => {
+    const now = new Date();
+    const offset = now.getTimezoneOffset() * 60000;
+    const localDate = new Date(now.getTime() - offset);
+    return localDate.toISOString().split("T")[0];
+  };
+
+  const today = getLocalDateString();
   const [nurse,    setNurse]    = useState(editRecord?.nurse||"");
   const [date,     setDate]     = useState(editRecord?.date||today);
   const [shift,    setShift]    = useState(editRecord?.shift||null);
