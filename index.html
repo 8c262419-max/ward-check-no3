@@ -50,7 +50,7 @@ const ITEMS_CONFIG = [
   { id: "bladder_sono",  label: "Bladder sono",       icon: "📟", type: "count_only", expected: 1, max: 1 },
   { id: "omron_bp",      label: "Omron血壓計",        icon: "🩸", type: "split",      poolMax: 8 },
   { id: "two_in_one",    label: "二合一無線生理監測器",icon: "🖥️", type: "split",      poolMax: 6 },
-  { id: "o2_flowmeter",  label: "O2雙頭流量表",       icon: "💨", type: "split",      poolMax: 8 }
+  { id: "o2_flowmeter",  label: "O2雙頭流量表",       icon: "💨", type: "split",      poolMax: 11 }
 ];
 
 function defaultItems() {
@@ -495,45 +495,60 @@ function App() {
 
   function handleSave(record, isEdit) {
     const currentRecords = records || [];
-    const next = isEdit ? currentRecords.map(r => r && r.id === record.id ? record : r) : [record, ...currentRecords];
-    setRecords(next); saveRecords(next);
-    setView("list"); setEditRecord(null);
-  }
-  function handleDelete(id) { 
-    const currentRecords = records || [];
-    const next = currentRecords.filter(r => r && r.id !== id); 
-    setRecords(next); saveRecords(next); 
+    const next = isEdit 
+      ? currentRecords.map(r => r.id === record.id ? record : r)
+      : [record, ...currentRecords];
+    setRecords(next);
+    saveRecords(next);
   }
 
-  return e("div", { style: { maxWidth: 600, margin: "0 auto", paddingBottom: 40 } },
-    view === "list" 
-      ? e("div", null,
-          e("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, flexWrap: 'wrap', gap: 10 } },
-            e("h2", { style: { color: P.priD, fontWeight: 900 } }, "📋 點班歷史紀錄"),
-            e("button", { onClick: () => { SFX.nav(); setEditRecord(null); setView("form"); }, style: { padding: "10px 18px", borderRadius: 14, border: "none", background: `linear-gradient(135deg, ${P.pri}, ${P.teal})`, color: "#fff", fontWeight: 800, fontSize: 15, cursor: "pointer", boxShadow: "0 4px 12px rgba(124,92,191,0.3)" } }, "➕ 開始點班")
-          ),
-          (!records || records.length === 0)
-            ? e("div", { style: { textAlign: "center", padding: "40px 20px", background: P.card, borderRadius: 18, color: P.muted, border: `1px solid ${P.border}` } },
-                e("p", { style: { fontSize: 48, marginBottom: 8 } }, "📭"), e("p", { style: { fontWeight: 700 } }, "目前沒有點班紀錄"), e("p", { style: { fontSize: 13, marginTop: 4 } }, "點擊右上角「開始點班」建立一筆吧！")
-              )
-            : records.map(r => r && r.id ? e(RecordCard, { key: r.id, record: r, onDelete: handleDelete, onEdit: (rec) => { SFX.nav(); setEditRecord(rec); setView("form"); } }) : null)
-        )
-      : e(CheckForm, { records: records, onSave: handleSave, onDone: () => { setView("list"); setEditRecord(null); }, onCancel: () => { SFX.nav(); setView("list"); setEditRecord(null); }, editRecord: editRecord })
+  function handleDelete(id) {
+    const next = records.filter(r => r.id !== id);
+    setRecords(next);
+    saveRecords(next);
+  }
+
+  function handleStartNew() {
+    SFX.tap();
+    setEditRecord(null);
+    setView("form");
+  }
+
+  function handleEdit(rec) {
+    setEditRecord(rec);
+    setView("form");
+  }
+
+  if (view === "form") {
+    return e(CheckForm, {
+      records: records,
+      editRecord: editRecord,
+      onSave: handleSave,
+      onDone: () => setView("list"),
+      onCancel: () => setView("list")
+    });
+  }
+
+  return e("div", { style: { paddingBottom: 80 } },
+    e("div", { style: { background: `linear-gradient(135deg, ${P.pri} 0%, ${P.teal} 100%)`, borderRadius: 20, padding: "20px", color: "#fff", marginBottom: 16, boxShadow: `0 6px 20px ${P.pri}44` } },
+      e("div", { style: { fontSize: 24, fontWeight: 900 } }, "8C神經外科病房"),
+      e("div", { style: { fontSize: 14, opacity: 0.9, marginTop: 4 } }, "3號車 裝備點班紀錄系統")
+    ),
+
+    e("button", { 
+      onClick: handleStartNew,
+      style: { width: "100%", padding: "16px", borderRadius: 16, border: "none", background: `linear-gradient(135deg, ${P.pri}, ${P.teal})`, color: "#fff", fontWeight: 800, fontSize: 18, cursor: "pointer", marginBottom: 20, boxShadow: `0 4px 14px ${P.pri}55`, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }
+    }, "➕ 新增點班紀錄"),
+
+    e("div", { style: { fontWeight: 800, fontSize: 16, color: P.pri, marginBottom: 12 } }, "📜 歷史點班紀錄"),
+
+    records.length === 0 
+      ? e("div", { style: { background: P.card, borderRadius: 16, padding: 30, textAlign: "center", color: P.muted, border: `1px solid ${P.border}` } }, "尚無紀錄，請點選上方按鈕開始點班。")
+      : records.map(rec => e(RecordCard, { key: rec.id, record: rec, onDelete: handleDelete, onEdit: handleEdit }))
   );
 }
 
-// 嚴格監聽 DOM 確保完全加載後才渲染，解決高頻率白屏問題
-document.addEventListener("DOMContentLoaded", function() {
-  try {
-    const container = document.getElementById('root');
-    if (container) {
-      const root = ReactDOM.createRoot(container);
-      root.render(e(App));
-    }
-  } catch (err) {
-    console.error(err);
-  }
-});
+ReactDOM.createRoot(document.getElementById("root")).render(e(App));
 </script>
 </body>
 </html>
